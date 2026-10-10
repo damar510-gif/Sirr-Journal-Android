@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#155e63">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>سِرّ — مذكرتي</title>
+  <link id="manifest" rel="manifest" href="./manifest.webmanifest">
+  <link id="favicon" rel="icon" href="./app-icon-192.png" type="image/png">
+  <link id="touch-icon" rel="apple-touch-icon" href="./app-icon-192.png">
+  <link rel="stylesheet" href="./app.css">
+  <script defer src="./identity.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="toolbar">
+    <img id="brand-icon" src="./app-icon-192.png" width="30" height="30" alt="">
+    <strong id="brand-name">سِرّ — مذكرتي</strong>
+    <button id="install" class="compact" type="button">تثبيت التطبيق</button>
+    <button id="settings" class="quiet compact" type="button" aria-label="إعدادات التطبيق">الإعدادات</button>
+  </header>
+  <main id="stage">
+    <p id="network-note" role="status" hidden>انقطع الاتصال. المذكرة المفتوحة باقية؛ انتظر عودة الشبكة لمزامنتها.</p>
+    <section id="cover" class="cover" aria-live="polite">
+      <div class="card">
+        <span class="eyebrow">مساحة لك وحدك</span>
+        <h1 id="cover-title">مذكرتك، أينما كنت</h1>
+        <p id="cover-text">اربط المذكرة برابط النشر لتفتحها بكلمة المرور من أي جهاز.</p>
+        <div id="cover-actions" class="actions"></div>
+      </div>
+    </section>
+  </main>
+  <dialog id="preferences" aria-labelledby="preferences-title">
+    <form id="preferences-form">
+      <div class="dialog-header"><h2 id="preferences-title">إعدادات التطبيق</h2><button id="close-settings" type="button" class="quiet" aria-label="إغلاق الإعدادات">×</button></div>
+      <label for="journal-url">رابط المذكرة على Google Apps Script</label>
+      <input id="journal-url" type="url" dir="ltr" inputmode="url" autocomplete="off" spellcheck="false" maxlength="800" placeholder="https://script.google.com/macros/s/…/exec">
+      <p class="help">استخدم رابط النشر الذي ينتهي بـ /exec. للسماح بالدخول من أي جهاز، انشر المذكرة بخيار «أي شخص» وفَعّل الدخول بالرابط وكلمة المرور داخل المذكرة.</p>
+      <label for="app-name">اسم الموقع والتطبيق على هذا الجهاز</label>
+      <input id="app-name" type="text" maxlength="80" autocomplete="off" value="سِرّ — مذكرتي">
+      <fieldset><legend>أيقونة التطبيق</legend><div id="presets" class="presets"></div></fieldset>
+      <label for="custom-icon" class="upload-label">أو اختر صورة خاصة</label>
+      <input id="custom-icon" type="file" accept="image/png,image/jpeg,image/webp">
+      <p class="help">PNG أو JPEG أو WebP، بحد أقصى 5 ميغابايت. اختر الاسم والأيقونة قبل التثبيت؛ قد يتطلب تغييرهما لاحقًا إعادة تثبيت التطبيق.</p>
+      <p id="settings-error" class="error" role="alert"></p>
+      <p class="help">يحفظ هذا الجهاز رابط المذكرة ومظهر التطبيق فقط. كلمة المرور والمذكرات لا تُحفظ في صفحة التثبيت.</p>
+      <div class="actions"><button id="save-settings" type="submit">حفظ وفتح المذكرة</button><button id="forget" type="button" class="quiet">إزالة الربط من هذا الجهاز</button></div>
+    </form>
+  </dialog>
+  <dialog id="install-help" aria-labelledby="install-title">
+    <h2 id="install-title">تثبيت المذكرة</h2>
+    <p id="install-text">في Chrome على أندرويد، افتح قائمة ⋮ واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية». اختر الاسم والأيقونة من الإعدادات قبل التثبيت.</p>
+    <p class="help">هذا تطبيق ويب قابل للتثبيت. يحتاج اتصالًا لفتح المذكرات ومزامنتها.</p>
+    <form method="dialog"><button>حسنًا</button></form>
+  </dialog>
+  <p id="toast" role="status" aria-live="polite" hidden></p>
+</body>
+</html>
