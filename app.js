@@ -14,6 +14,7 @@
   let brand = identity.branding(readJSON(storage.get(BRAND_KEY)));
   let draft = { ...brand }, frame = null, ready = false, timeout = null, prompt = null, toastTimer = null;
   let workerReady = null, saveRunning = false, loadRequest = 0, reconnectTimer = null;
+  let shellSource = null, shellOrigin = null, shellControls = false, settingsFromJournal = false;
   function readJSON(value) { try { return JSON.parse(value); } catch (_) { return null; } }
   function svgURL(preset) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(identity.svg(preset)); }
   function tell(message) {
@@ -33,7 +34,12 @@
     else { button.type = 'button'; button.addEventListener('click', handler); }
     return button;
   }
+  function showJournal() {
+    $('cover').hidden = true; document.body.classList.add('journal-visible');
+    $('shell-settings-toggle').hidden = shellControls;
+  }
   function cover(title, description, actions) {
+    document.body.classList.remove('journal-visible'); $('shell-settings-toggle').hidden = true;
     $('cover-title').textContent = title; $('cover-text').textContent = description;
     $('cover-actions').replaceChildren(...(actions || [])); $('cover').hidden = false;
   }
@@ -59,7 +65,7 @@
   async function loadJournal() {
     const request = ++loadRequest;
     clearTimeout(reconnectTimer);
-    clearTimeout(timeout); ready = false;
+    clearTimeout(timeout); ready = false; shellSource = null; shellOrigin = null; shellControls = false;
     if (!journalURL) return setup();
     if (!await hasConnection()) { if (request === loadRequest) offline(); return; }
     if (request !== loadRequest) return;
@@ -74,7 +80,7 @@
       if (navigator.onLine === false) return offline();
       cover('تعذّر التأكد من فتح المذكرة', 'تحقق من رابط النشر. للدخول دون بريد، يجب نشر Google Apps Script بخيار «أي شخص» وتفعيل الدخول بالرابط داخل المذكرة. يمكنك فتح الرابط في المتصفح للاطلاع على رسالة Google.', [
         action('إعادة المحاولة', loadJournal), action('فتح في المتصفح', null, journalURL),
-        action('عرض الصفحة المحمّلة', () => { $('cover').hidden = true; })
+        action('عرض الصفحة المحمّلة', showJournal)
       ]);
     }, 16000);
   }
@@ -95,16 +101,30 @@
     } catch (_) { return false; }
   }
   window.addEventListener('message', event => {
-    if (!event.data || event.data.sirr !== 1 || event.data.type !== 'ready' || !googleOrigin(event.origin) || !belongsToFrame(event.source)) return;
-    ready = true; clearTimeout(timeout); $('cover').hidden = true;
-    $('network-note').hidden = navigator.onLine !== false;
+    if (!event.data || event.data.sirr !== 1 || !googleOrigin(event.origin) || !belongsToFrame(event.source)) return;
+    if (event.data.type === 'ready') {
+      ready = true; clearTimeout(timeout); showJournal();
+      $('network-note').hidden = navigator.onLine !== false;
+      if (event.data.shellControls === 1) {
+        shellSource = event.source; shellOrigin = event.origin;
+        shellSource.postMessage({ sirr: 1, type: 'shell-connected' }, shellOrigin);
+      }
+    } else if (event.source === shellSource && event.origin === shellOrigin) {
+      if (event.data.type === 'shell-controls-ready') {
+        shellControls = true;
+        if (document.body.classList.contains('journal-visible')) $('shell-settings-toggle').hidden = true;
+      } else if (event.data.type === 'open-shell-settings' && shellControls) {
+        showSettings(true);
+      }
+    }
   });
   function selectPreset(preset) {
     draft = { name: draft.name, preset };
     $('custom-icon').value = '';
     for (const button of $('presets').children) button.setAttribute('aria-pressed', String(button.dataset.preset === preset));
   }
-  function showSettings() {
+  function showSettings(fromJournal) {
+    settingsFromJournal = fromJournal === true;
     draft = { ...brand }; $('app-name').value = brand.name; $('journal-url').value = journalURL;
     $('custom-icon').value = ''; $('settings-error').textContent = '';
     for (const button of $('presets').children) button.setAttribute('aria-pressed', String(!brand.custom && button.dataset.preset === brand.preset));
@@ -197,14 +217,25 @@
     $('network-note').hidden = true;
     $('preferences').close(); setup(); if (!removed) tell('تعذّر حذف الرابط من تخزين المتصفح؛ امسح بيانات الموقع لإزالته نهائيًا.');
   });
-  $('settings').addEventListener('click', showSettings); $('close-settings').addEventListener('click', () => $('preferences').close());
+  $('settings').addEventListener('click', showSettings);
+  $('shell-settings-toggle').addEventListener('click', showSettings);
+  $('close-settings').addEventListener('click', () => $('preferences').close());
+  $('preferences').addEventListener('close', () => {
+    if (!frame || !document.body.classList.contains('journal-visible')) return;
+    if (settingsFromJournal || $('shell-settings-toggle').hidden) {
+      frame.focus();
+      if (shellControls && shellSource) shellSource.postMessage({ sirr: 1, type: 'shell-settings-closed' }, shellOrigin);
+    } else $('shell-settings-toggle').focus();
+  });
   function isInstalled() { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
   window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); prompt = event; });
-  $('install').addEventListener('click', async () => {
+  async function installApp() {
     if (prompt) { const available = prompt; prompt = null; await available.prompt(); await available.userChoice; }
     else { $('install-text').textContent = isInstalled() ? 'التطبيق مفتوح بالفعل في وضع التطبيق المثبّت.' : 'في Chrome على أندرويد، افتح قائمة ⋮ واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية». اختر الاسم والأيقونة من الإعدادات قبل التثبيت. على iPhone استخدم «مشاركة» ثم «إضافة إلى الشاشة الرئيسية».'; $('install-help').showModal(); }
-  });
-  window.addEventListener('appinstalled', () => { prompt = null; $('install').hidden = true; tell('تم تثبيت المذكرة. افتحها من أيقونتها على الجهاز.'); });
+  }
+  $('install').addEventListener('click', installApp);
+  $('install-settings').addEventListener('click', installApp);
+  window.addEventListener('appinstalled', () => { prompt = null; $('install').hidden = true; $('install-settings').hidden = true; tell('تم تثبيت المذكرة. افتحها من أيقونتها على الجهاز.'); });
   async function acceptIncoming(url, params) {
     const changedURL = url !== journalURL;
     journalURL = url; storage.set(URL_KEY, url);
@@ -221,12 +252,12 @@
     const raw = params.get('url') || params.get('u'), url = identity.execURL(raw);
     if (raw && !url) { cover('رابط المذكرة غير صالح', 'استخدم رابط Google Apps Script الذي ينتهي بـ /exec، ثم أعد الربط من الإعدادات.', [action('إعدادات التطبيق', showSettings)]); return; }
     if (url && journalURL && url !== journalURL) {
-      cover('ربط مذكرة أخرى؟', 'الرابط الوارد مختلف عن المذكرة المحفوظة. فتحه سيغلق المذكرة الحالية؛ احفظ تغييراتها أولًا. يمكنك إبقاء المذكرة الحالية للعودة إليها.', [action('استخدام الرابط الجديد', () => acceptIncoming(url, params).catch(() => tell('تعذّر تغيير الرابط. أعد المحاولة من الإعدادات.'))), action('إبقاء المذكرة الحالية', () => { if (frame && ready) $('cover').hidden = true; else loadJournal(); })]);
+      cover('ربط مذكرة أخرى؟', 'الرابط الوارد مختلف عن المذكرة المحفوظة. فتحه سيغلق المذكرة الحالية؛ احفظ تغييراتها أولًا. يمكنك إبقاء المذكرة الحالية للعودة إليها.', [action('استخدام الرابط الجديد', () => acceptIncoming(url, params).catch(() => tell('تعذّر تغيير الرابط. أعد المحاولة من الإعدادات.'))), action('إبقاء المذكرة الحالية', () => { if (frame && ready) showJournal(); else loadJournal(); })]);
     } else if (url) acceptIncoming(url, params).catch(() => { loadJournal(); tell('تعذّر تحديث مظهر التطبيق. يمكنك المحاولة من الإعدادات.'); });
     else loadJournal();
   }
   window.addEventListener('online', () => { $('network-note').hidden = true; if (journalURL && !ready) loadJournal(); });
   window.addEventListener('offline', () => { if (journalURL) offline(); });
   window.addEventListener('hashchange', incoming);
-  paint(); $('install').hidden = isInstalled(); workerReady = initializeWorker(); incoming();
+  paint(); $('install').hidden = $('install-settings').hidden = isInstalled(); workerReady = initializeWorker(); incoming();
 })();

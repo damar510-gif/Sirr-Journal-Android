@@ -3,7 +3,7 @@
 importScripts('./identity.js');
 const BASE = self.registration.scope;
 const CACHE_PREFIX = 'sirr-shell:' + new URL(BASE).pathname + ':';
-const CACHE = CACHE_PREFIX + 'v1';
+const CACHE = CACHE_PREFIX + 'v2';
 const ASSETS = ['./', './index.html', './app.css', './app.js', './identity.js', './manifest.webmanifest', './app-icon-192.png', './app-icon-512.png', './connection.txt'];
 const URLS = ASSETS.map(path => new URL(path, BASE).href);
 const MANIFEST = new URL('./manifest.webmanifest', BASE).href;

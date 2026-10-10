@@ -33,6 +33,7 @@
       </div>
     </section>
   </main>
+  <button id="shell-settings-toggle" type="button" aria-label="إعدادات التطبيق" title="إعدادات التطبيق" hidden>⚙</button>
   <dialog id="preferences" aria-labelledby="preferences-title">
     <form id="preferences-form">
       <div class="dialog-header"><h2 id="preferences-title">إعدادات التطبيق</h2><button id="close-settings" type="button" class="quiet" aria-label="إغلاق الإعدادات">×</button></div>
@@ -47,7 +48,7 @@
       <p class="help">PNG أو JPEG أو WebP، بحد أقصى 5 ميغابايت. اختر الاسم والأيقونة قبل التثبيت؛ قد يتطلب تغييرهما لاحقًا إعادة تثبيت التطبيق.</p>
       <p id="settings-error" class="error" role="alert"></p>
       <p class="help">يحفظ هذا الجهاز رابط المذكرة ومظهر التطبيق فقط. كلمة المرور والمذكرات لا تُحفظ في صفحة التثبيت.</p>
-      <div class="actions"><button id="save-settings" type="submit">حفظ وفتح المذكرة</button><button id="forget" type="button" class="quiet">إزالة الربط من هذا الجهاز</button></div>
+      <div class="actions"><button id="install-settings" type="button" class="quiet">تثبيت التطبيق</button><button id="save-settings" type="submit">حفظ وفتح المذكرة</button><button id="forget" type="button" class="quiet">إزالة الربط من هذا الجهاز</button></div>
     </form>
   </dialog>
   <dialog id="install-help" aria-labelledby="install-title">
